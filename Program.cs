@@ -3,7 +3,9 @@ using System.Numerics;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using System.Threading.Tasks;
+using System.Text;
+using System.Security;
+using System.Security.Cryptography;
 
 namespace GOST_34._10_12
 {
@@ -26,8 +28,27 @@ namespace GOST_34._10_12
      
 
             byte[] message = File.ReadAllBytes("Book.pdf");
-            Streebog streebog = new Streebog(512);
+            Streebog streebog = new Streebog(256);
             var h = streebog.GetHash(message);
+
+            //var resSB = new StringBuilder();
+            //for (int i = 0; i < h.Length; i++)
+            //{
+            //    var binaryView = Convert.ToString(h[i], 2).PadLeft(8, '0');
+            //    resSB.Append(binaryView);
+            //}
+            //var resSTR = resSB.ToString();
+            var result = string.Concat(h.Select(b => Convert.ToString(b, 2).PadLeft(8, '0')));
+            var resultLength = result.Length;
+
+            BigInteger binary_alpha = new BigInteger(result, 2);
+            BigInteger e = binary_alpha % p;
+            if (e == 0)
+                e = 1;
+
+            RandomNumberGenerator RNG = RandomNumberGenerator.Create();
+
+
             Console.ReadKey();
         }
     }
