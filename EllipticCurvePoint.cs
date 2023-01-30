@@ -5,7 +5,7 @@ using System.Text;
 
 namespace GOST_34._10_12
 {
-    class EllipticCurvePoint
+    public class EllipticCurvePoint
     {
         public BigInteger a;
         public BigInteger b;
