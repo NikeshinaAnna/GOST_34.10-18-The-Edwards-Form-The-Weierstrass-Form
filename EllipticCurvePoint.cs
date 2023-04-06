@@ -128,15 +128,6 @@ namespace GOST_34._10_12
                 tmp = DoublePoint(tmp);
                 N = N / 2;
             }
-            //for (int i = N_bits.Length - 1; i >= 0; i--)
-            //{
-            //    if (N_bits[i] == 1)
-            //    {
-            //        result = AdditionPoints(tmp, result);
-            //    }
-            //    tmp = DoublePoint(tmp);
-            //}
-            Console.WriteLine(result.x.ToString() + ' ' + result.y.ToString() + ' ' + result.z.ToString());
             return result;
         }
 
