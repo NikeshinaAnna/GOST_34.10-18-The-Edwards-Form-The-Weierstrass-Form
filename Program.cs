@@ -13,6 +13,7 @@ namespace GOST_34._10_12
     {
         static void Main()
         {
+            string filename = "photo.jpg";
             /*Первый набор данных из самого госта
              * BigInteger p = new BigInteger("57896044618658097711785492504343953926634992332820282019728792003956564821041", 10);
             BigInteger a = new BigInteger("7", 10);
@@ -23,24 +24,7 @@ namespace GOST_34._10_12
             BigInteger Q_y = new BigInteger("17614944419213781543809391949654080031942662045363639260709847859438286763994", 10);
             BigInteger d = new BigInteger("55441196065363246126355624130324183196576709222340016572108097750006097525544", 10);
             var q = new BigInteger("57896044618658097711785492504343953927082934583725450622380973592137631069619", 10);*/
-
-            //проверяю гипотезу, что Q=dP, выполняется
-            /*var P = new EllipticCurvePoint(a, b, P_x, P_y, p);
-            var C = new EllipticCurvePoint();
-            C = ProectiveECPoint.GetAffineECPoint(ProectiveECPoint.MultiplyPoint(new ProectiveECPoint(P), d));*/
-            //-------------
-
-            /*var sign = GenerateSignOnEllipticCurves(p, d, P, q);
-            using (var sw = new StreamWriter("sign.txt"))
-            {
-                sw.Write(sign);
-            }
-            Console.WriteLine("Подпись записана в файл!");
-            var str = File.ReadAllText("sign.txt");
-            Console.WriteLine(VerifySignOnEllipticCurves(str, q, "Book.pdf", P, Q));
-            Console.WriteLine();*/
-
-            /*Второй набор данных из госта
+            /*______________________________Второй набор данных из госта
              * BigInteger p = new BigInteger("3623986102229003635907788753683874306021320925534678605086546150450856166624002482588482022271496854025090823603058735163734263822371964987228582907372403", 10);
             BigInteger a = new BigInteger("7", 10);
             BigInteger b = new BigInteger("1518655069210828534508950034714043154928747527740206436194018823352809982443793732829756914785974674866041605397883677596626326413990136959047435811826396", 10);
@@ -52,6 +36,12 @@ namespace GOST_34._10_12
             var q = new BigInteger("3623986102229003635907788753683874306021320925534678605086546150450856166623969164898305032863068499961404079437936585455865192212970734808812618120619743", 10);
             var P = new EllipticCurvePoint(a, b, P_x, P_y, p);
             var Q = new EllipticCurvePoint(a, b, Q_x, Q_y, p);*/
+
+            //проверяю гипотезу, что Q=dP, выполняется
+            /*var P = new EllipticCurvePoint(a, b, P_x, P_y, p);
+            var C = new EllipticCurvePoint();
+            C = ProectiveECPoint.GetAffineECPoint(ProectiveECPoint.MultiplyPoint(new ProectiveECPoint(P), d));*/
+            //-------------
 
             //Данные из спецификации
             var p = new BigInteger("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD97", 16);
@@ -68,33 +58,30 @@ namespace GOST_34._10_12
             var y = new BigInteger("32879423AB1A0375895786C4BB46E9565FDE0B5344766740AF268ADB32322E5C", 16);
             k = k % p;
 
-            //var P_w = new EllipticCurvePoint(a,b,x,y,p);
-            //var Q_w = new EllipticCurvePoint();
-            //Q_w = (EllipticCurvePoint)P_w.MultiplyPointByNumber(k);
-            //var sign = GenerateSignOnEllipticCurves(p, k, P_w, q);
-            //using (var sw = new StreamWriter("sign.txt"))
-            //{
-            //    sw.Write(sign);
-            //}
-            //Console.WriteLine("Подпись записана в файл!");
-            //var str = File.ReadAllText("sign.txt");
-            //Console.WriteLine(VerifySignOnEllipticCurves(str, q, "Book.pdf", P_w, Q_w));
+            var P_w = new EllipticCurvePoint(a, b, x, y, p);
+            var Q_w = new EllipticCurvePoint();
+            Q_w = (EllipticCurvePoint)P_w.MultiplyPointByNumber(k);
+            var sign_onWeirshtras = GenerateSign(p, k, P_w, q, filename);
+            using (var sw = new StreamWriter("sign1.txt"))
+            {
+                sw.Write(sign_onWeirshtras);
+            }
+            Console.WriteLine("Подпись на кривых Вейерштраса записана в файл!");
+            var str_sign_onWeirshtras = File.ReadAllText("sign.txt");
+            Console.WriteLine(VerifySign(str_sign_onWeirshtras, q, filename, P_w, Q_w));
             //Console.WriteLine();
 
-            var P = new EdwardsCurvePoint(p, u, v);
-            var Q = new EdwardsCurvePoint();
-            Q = (EdwardsCurvePoint)P.MultiplyPointByNumber(k);
+            var P_ed = new EdwardsCurvePoint(p, u, v);
+            var Q_ed = new EdwardsCurvePoint();
+            Q_ed = (EdwardsCurvePoint)P_ed.MultiplyPointByNumber(k);
 
-            //var sign = GenerateSignOnEdwardsCurves(p, k, P, q);
-            //using (var sw = new StreamWriter("sign.txt"))
-            //    sw.Write(sign);
+            var sign_onEdwards = GenerateSign(p, k, P_ed, q, filename);
+            using (var sw = new StreamWriter("sign1.txt"))
+                sw.Write(sign_onEdwards);
 
-            Console.WriteLine("Подпись записана в файл!");
-            var str = File.ReadAllText("sign.txt");
-            Console.WriteLine(VerifySignOnEdwardsCurves(str, q, "Book.pdf", P, Q));
-            Console.WriteLine();
-
-            //checkEllipticCurves();
+            Console.WriteLine("Подпись на кривой Эдвардса записана в файл!");
+            var str_sign_onEdwards = File.ReadAllText("sign.txt");
+            Console.WriteLine(VerifySign(str_sign_onEdwards, q, filename, P_ed, Q_ed));
             Console.ReadKey();
         }
         public static string ConcatTwoString (string r, string s)
@@ -122,7 +109,94 @@ namespace GOST_34._10_12
 
             return k;
         }
+        public static string GenerateSign(BigInteger p, BigInteger d, ICurve P, BigInteger q, string filename)
+        {
+            //byte[] message = Encoding.Default.GetBytes(File.ReadAllText("Book.pdf"));//пока не решила, как лучше читать биты из сообщения
+            byte[] message = File.ReadAllBytes(filename);
+            Streebog streebog = new Streebog(256);
+            var h = streebog.GetHash(message);
 
+            var result = string.Concat(h.Select(b => Convert.ToString(b, 2).PadLeft(8, '0')));
+
+            BigInteger binary_alpha = new BigInteger(result, 2);
+            BigInteger e = binary_alpha % q;
+            if (e == 0)
+                e = 1;
+
+            RandomNumberGenerator RNG = RandomNumberGenerator.Create();
+            var rnd = new Random();
+            BigInteger r = 0;
+            BigInteger k;
+            BigInteger s;
+            do
+            {
+                k = GenerateK(q, rnd, RNG);
+                if (P is EdwardsCurvePoint)
+                {
+                    var C = new EdwardsCurvePoint();
+                    C = (EdwardsCurvePoint)P.MultiplyPointByNumber(k);
+                    r = C.u % q;
+                }
+                else if (P is EllipticCurvePoint)
+                {
+                    var C = new EllipticCurvePoint();
+                    C = (EllipticCurvePoint)P.MultiplyPointByNumber(k);
+                    r = C.x % q;
+                }
+                s = (r * d + k * e) % q;
+            } while (r == 0 || s == 0);
+
+            string r_binary = r.ToString(2);
+            string s_binary = s.ToString(2);
+
+            var sign = ConcatTwoString(r_binary, s_binary);
+            return sign;
+        }
+
+        public static bool VerifySign(string sign, BigInteger q, string path, ICurve P, ICurve Q)
+        {
+            var r_binaryStr = sign.Substring(0, sign.Length / 2);
+            var s_binaryStr = sign.Substring(sign.Length / 2);
+            var r = new BigInteger(r_binaryStr, 2);
+            var s = new BigInteger(s_binaryStr, 2);
+            if (r > q || r < 0 || s < 0 || s > q)
+                return false;
+            byte[] message = File.ReadAllBytes(path);
+            Streebog streebog = new Streebog(256);
+            var h = streebog.GetHash(message);
+
+            var result = string.Concat(h.Select(b => Convert.ToString(b, 2).PadLeft(8, '0')));
+
+            BigInteger binary_alpha = new BigInteger(result, 2);
+            BigInteger e = binary_alpha % q;
+            if (e == 0)
+                e = 1;
+
+            var v = Operations.ExtendedEuclid(q, e);
+            var z1 = s * v % q;
+            var z2 = q + ((-(r * v)) % q);
+            BigInteger R = 0;
+
+            if (P is EdwardsCurvePoint)
+            {
+                var A = (EdwardsCurvePoint)P.MultiplyPointByNumber(z1);
+                var B = (EdwardsCurvePoint)Q.MultiplyPointByNumber(z2);
+                var C = (EdwardsCurvePoint)A.AddPoints(B);
+                R = C.u % q;
+            }
+            else if (P is EllipticCurvePoint)
+            {
+                var A = (EllipticCurvePoint)P.MultiplyPointByNumber(z1);
+                var B = (EllipticCurvePoint)Q.MultiplyPointByNumber(z2);
+                var C = (EllipticCurvePoint)A.AddPoints(B);
+                R = C.x % q;
+            }
+            
+            if (R == r)
+                return true;
+            else return false;
+        }
+        #region Методы (отдельные) для кривой вейрштрасса и кривой Эдвардса
         public static string GenerateSignOnEdwardsCurves(BigInteger p, BigInteger d, EdwardsCurvePoint P_edw, BigInteger q, string filename)
         {
             var C = new EdwardsCurvePoint();
@@ -262,6 +336,7 @@ namespace GOST_34._10_12
                 return true;
             else return false;
         }
+        #endregion
 
         public static void checkEllipticCurves()
         {
