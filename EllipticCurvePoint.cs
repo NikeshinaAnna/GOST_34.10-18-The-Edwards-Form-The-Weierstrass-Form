@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
-
-namespace GOST_34._10_12
+﻿namespace GOST_34._10_12
 {
-    public class EllipticCurvePoint
+    public class EllipticCurvePoint:ICurve
     {
         public BigInteger a;
         public BigInteger b;
@@ -21,6 +16,19 @@ namespace GOST_34._10_12
             x = _x;
             y = _y;
             fieldCharacteristic = _fieldCharacteristic;
+        }
+
+        public ICurve AddPoints(ICurve point2)
+        {
+            var proectivePointA = new ProectiveECPoint(this);
+            var proectivePointB = new ProectiveECPoint(point2 as EllipticCurvePoint);
+            return ProectiveECPoint.GetAffineECPoint(ProectiveECPoint.AdditionPoints(proectivePointA, proectivePointB));
+        }
+
+        public ICurve MultiplyPointByNumber(BigInteger number)
+        {
+            var proectivePoint = new ProectiveECPoint(this);
+            return ProectiveECPoint.GetAffineECPoint(ProectiveECPoint.MultiplyPoint(proectivePoint, number));
         }
     }
     class ProectiveECPoint
@@ -134,40 +142,11 @@ namespace GOST_34._10_12
 
         public static EllipticCurvePoint GetAffineECPoint(ProectiveECPoint _point)
         {
-            var coef = ExtendedEuclid(_point.p, _point.z);
+            var coef = Operations.ExtendedEuclid(_point.p, _point.z);
             BigInteger _x = _point.x * coef % _point.p;
             BigInteger _y = _point.y * coef % _point.p;
 
             return new EllipticCurvePoint(_point.a, _point.b, _x, _y, _point.p);
-        }
-
-        //это для поиска обратного
-        public static BigInteger ExtendedEuclid(BigInteger base_n, BigInteger number)
-        {
-            var a = base_n;
-            BigInteger res = 0;
-            BigInteger w = 1;
-            BigInteger temp;
-            BigInteger temp1;
-            BigInteger x;
-            number = number + base_n;
-            number = number % base_n;
-
-            while (number > 0) // 
-            {
-                temp1 = a / number;
-                x = number;
-                number = a % x;
-                a = x;
-                x = w;
-                temp = temp1 * x;
-                w = res - temp;
-                res = x;
-            }
-            res %= base_n;
-            x = res + base_n;
-            res = x % base_n;
-            return res;
         }
     }
 }

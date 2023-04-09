@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
-using System.Text;
-
-namespace GOST_34._10_12
+﻿namespace GOST_34._10_12
 {
-    public class EdwardsCurvePoint
+    public class EdwardsCurvePoint : ICurve
     {
         public BigInteger e = new BigInteger("1", 10);
         public BigInteger d = new BigInteger("0605F6B7C183FA81578BC39CFAD518132B9DF62897009AF7E522C32D6DC7BFFB", 16);
@@ -18,10 +13,10 @@ namespace GOST_34._10_12
         public EdwardsCurvePoint(EllipticCurvePoint p)
         {
             this.fieldChar = p.fieldCharacteristic;
-            var s = (e - d + fieldChar)* ExtendedEuclid(fieldChar, 4) % fieldChar;
-            var t = (e + d) * ExtendedEuclid(fieldChar, 6) % fieldChar;
-            var y_inverse = ExtendedEuclid(fieldChar, p.y);
-            var v_inverse = ExtendedEuclid(fieldChar, p.x - t + s);
+            var s = (e - d + fieldChar)* Operations.ExtendedEuclid(fieldChar, 4) % fieldChar;
+            var t = (e + d) * Operations.ExtendedEuclid(fieldChar, 6) % fieldChar;
+            var y_inverse = Operations.ExtendedEuclid(fieldChar, p.y);
+            var v_inverse = Operations.ExtendedEuclid(fieldChar, p.x - t + s);
             u = (p.x - t + fieldChar) * y_inverse % fieldChar;
             v = (p.x - t - s + fieldChar) * v_inverse % fieldChar;
         }
@@ -33,45 +28,30 @@ namespace GOST_34._10_12
             this.v = v;
         }
 
-        public static EdwardsCurvePoint MultipluEdwardsPoint(BigInteger k, EdwardsCurvePoint point)
+        //public static EdwardsCurvePoint MultipluEdwardsPoint(BigInteger k, EdwardsCurvePoint point)
+        //{
+        //    var proectivePoint = new EdwardsCurveProectivePoint(point);
+        //    return EdwardsCurveProectivePoint.getAffineEdwardsPoint(EdwardsCurveProectivePoint.multiplyEdwardsProectivePoint(proectivePoint, k));
+        //}
+
+        //public static EdwardsCurvePoint SumEdwardsPoint(EdwardsCurvePoint A, EdwardsCurvePoint B)
+        //{
+        //    var proectivePointA = new EdwardsCurveProectivePoint(A);
+        //    var proectivePointB = new EdwardsCurveProectivePoint(B);
+        //    return EdwardsCurveProectivePoint.getAffineEdwardsPoint(EdwardsCurveProectivePoint.AdditionPoints(proectivePointA, proectivePointB));
+        //}
+
+        public ICurve MultiplyPointByNumber(BigInteger number)
         {
-            var proectivePoint = new EdwardsCurveProectivePoint(point);
-            return EdwardsCurveProectivePoint.getAffineEdwardsPoint(EdwardsCurveProectivePoint.multiplyEdwardsProectivePoint(proectivePoint, k));
+            var proectivePoint = new EdwardsCurveProectivePoint(this);
+            return EdwardsCurveProectivePoint.GetAffineEdwardsPoint(EdwardsCurveProectivePoint.MultiplyEdwardsProectivePoint(proectivePoint, number));
         }
 
-        public static EdwardsCurvePoint SumEdwardsPoint(EdwardsCurvePoint A, EdwardsCurvePoint B)
+        public ICurve AddPoints(ICurve point2)
         {
-            var proectivePointA = new EdwardsCurveProectivePoint(A);
-            var proectivePointB = new EdwardsCurveProectivePoint(B);
-            return EdwardsCurveProectivePoint.getAffineEdwardsPoint(EdwardsCurveProectivePoint.AdditionPoints(proectivePointA, proectivePointB));
-        }
-
-        public static BigInteger ExtendedEuclid(BigInteger base_n, BigInteger number)
-        {
-            var a = base_n;
-            BigInteger res = 0;
-            BigInteger w = 1;
-            BigInteger temp;
-            BigInteger temp1;
-            BigInteger x;
-            number = number + base_n;
-            number = number % base_n;
-
-            while (number > 0) // 
-            {
-                temp1 = a / number;
-                x = number;
-                number = a % x;
-                a = x;
-                x = w;
-                temp = temp1 * x;
-                w = res - temp;
-                res = x;
-            }
-            res %= base_n;
-            x = res + base_n;
-            res = x % base_n;
-            return res;
+            var proectivePointA = new EdwardsCurveProectivePoint(this);
+            var proectivePointB = new EdwardsCurveProectivePoint(point2 as EdwardsCurvePoint);
+            return EdwardsCurveProectivePoint.GetAffineEdwardsPoint(EdwardsCurveProectivePoint.AdditionPoints(proectivePointA, proectivePointB));
         }
     }
 
@@ -104,17 +84,18 @@ namespace GOST_34._10_12
             this.d = d;
         }
 
-        public static EdwardsCurveProectivePoint multiplyEdwardsProectivePoint(EdwardsCurveProectivePoint A, BigInteger k)
+        public static EdwardsCurveProectivePoint MultiplyEdwardsProectivePoint(EdwardsCurveProectivePoint A, BigInteger k)
         {
             var res = new EdwardsCurveProectivePoint(0, 1, 1, A.p, A.e, A.d); ;
             var tmp = A;
             while (k != 0)
             {
-                if (k % 2 == 1)
+                if (k % 2 == 1) //В этом месте основное отличие кривых в форме Эдвардса от кривых Вейерштраса: 
+                                //здесь алгоритм сложения одинаковых точек ничем не отличается от алгоритма сложения различных точек.
                 {
                     res = AdditionPoints(tmp, res);
                 }
-                tmp = DoublePoint(tmp);
+                tmp = AdditionPoints(tmp, tmp);
                 k = k / 2;
             }
             return res;
@@ -135,6 +116,7 @@ namespace GOST_34._10_12
             var X3 = A * F * (H + 2*p - C - D) % p;
             var Y3 = A * G * (D - C + p) % p;
             var Z3 = F * G % p;
+
             return new EdwardsCurveProectivePoint(X3, Y3, Z3, p, P1.e, P1.d);
         }
 
@@ -153,11 +135,12 @@ namespace GOST_34._10_12
             var X3 = A * F * (H + 2 * p - C - D) % p;
             var Y3 = A * G * (D - C + p) % p;
             var Z3 = F * G % p;
+
             return new EdwardsCurveProectivePoint(X3, Y3, Z3, p, P.e, P.d);
         }
 
 
-        public static EdwardsCurvePoint getAffineEdwardsPoint(EdwardsCurveProectivePoint point)
+        public static EdwardsCurvePoint GetAffineEdwardsPoint(EdwardsCurveProectivePoint point)
         {
             var p = point.p;
             var z_inverse = Operations.ExtendedEuclid(p, point.z);

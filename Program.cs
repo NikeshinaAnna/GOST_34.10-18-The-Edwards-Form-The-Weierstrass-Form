@@ -64,21 +64,36 @@ namespace GOST_34._10_12
             var u = new BigInteger("0D", 16);
             var v = new BigInteger("60CA1E32AA475B348488C38FAB07649CE7EF8DBE87F22E81F92B2592DBA300E7", 16);
             var k = new BigInteger("55441196065363246126355624130324183196576709222340016572108097750006097525544", 10);
+            var x = new BigInteger("0091E38443A5E82C0D880923425712B2BB658B9196932E02C78B2582FE742DAA28", 16);
+            var y = new BigInteger("32879423AB1A0375895786C4BB46E9565FDE0B5344766740AF268ADB32322E5C", 16);
             k = k % p;
+
+            //var P_w = new EllipticCurvePoint(a,b,x,y,p);
+            //var Q_w = new EllipticCurvePoint();
+            //Q_w = (EllipticCurvePoint)P_w.MultiplyPointByNumber(k);
+            //var sign = GenerateSignOnEllipticCurves(p, k, P_w, q);
+            //using (var sw = new StreamWriter("sign.txt"))
+            //{
+            //    sw.Write(sign);
+            //}
+            //Console.WriteLine("Подпись записана в файл!");
+            //var str = File.ReadAllText("sign.txt");
+            //Console.WriteLine(VerifySignOnEllipticCurves(str, q, "Book.pdf", P_w, Q_w));
+            //Console.WriteLine();
 
             var P = new EdwardsCurvePoint(p, u, v);
             var Q = new EdwardsCurvePoint();
-            Q=EdwardsCurvePoint.MultipluEdwardsPoint(k, P);
+            Q = (EdwardsCurvePoint)P.MultiplyPointByNumber(k);
 
-            var sign = GenerateSignOnEdwardsCurves(p, k, P, q);
-            using (var sw = new StreamWriter("sign.txt"))
-                sw.Write(sign);
+            //var sign = GenerateSignOnEdwardsCurves(p, k, P, q);
+            //using (var sw = new StreamWriter("sign.txt"))
+            //    sw.Write(sign);
 
             Console.WriteLine("Подпись записана в файл!");
             var str = File.ReadAllText("sign.txt");
-            Console.WriteLine(VerifySignOnEdwardsCurves(str, q, "photo.jpg", P, Q));
+            Console.WriteLine(VerifySignOnEdwardsCurves(str, q, "Book.pdf", P, Q));
             Console.WriteLine();
-            
+
             //checkEllipticCurves();
             Console.ReadKey();
         }
@@ -108,12 +123,12 @@ namespace GOST_34._10_12
             return k;
         }
 
-        public static string GenerateSignOnEdwardsCurves(BigInteger p, BigInteger d, EdwardsCurvePoint P_edw, BigInteger q)
+        public static string GenerateSignOnEdwardsCurves(BigInteger p, BigInteger d, EdwardsCurvePoint P_edw, BigInteger q, string filename)
         {
             var C = new EdwardsCurvePoint();
 
             //byte[] message = Encoding.Default.GetBytes(File.ReadAllText("Book.pdf"));//пока не решила, как лучше читать биты из сообщения
-            byte[] message = File.ReadAllBytes("photo.jpg");
+            byte[] message = File.ReadAllBytes("Book.pdf");
             Streebog streebog = new Streebog(256);
             var h = streebog.GetHash(message);
 
@@ -132,7 +147,7 @@ namespace GOST_34._10_12
             do
             {
                 k = GenerateK(q, rnd, RNG);
-                C = EdwardsCurvePoint.MultipluEdwardsPoint(k, P_edw);
+                C = (EdwardsCurvePoint)P_edw.MultiplyPointByNumber(k);
                 r = C.u % q;
                 s = (r * d + k * e) % q;
             } while (r == 0 || s == 0);
@@ -163,14 +178,14 @@ namespace GOST_34._10_12
             if (e == 0)
                 e = 1;
 
-            var v = ProectiveECPoint.ExtendedEuclid(q, e);
+            var v = Operations.ExtendedEuclid(q, e);
             var z1 = s * v % q;
             var z2 = q + ((-(r * v)) % q);
 
-            var A = EdwardsCurvePoint.MultipluEdwardsPoint(z1, P_edw);
-            var B = EdwardsCurvePoint.MultipluEdwardsPoint(z2, Q_edw);
+            var A = (EdwardsCurvePoint)P_edw.MultiplyPointByNumber(z1);
+            var B = (EdwardsCurvePoint)Q_edw.MultiplyPointByNumber(z2);
 
-            var C = EdwardsCurvePoint.SumEdwardsPoint(A, B);
+            var C = (EdwardsCurvePoint)A.AddPoints(B);
             var R = C.u % q;
 
             if (R == r)
@@ -202,7 +217,7 @@ namespace GOST_34._10_12
             do
             {
                 k = GenerateK(q, rnd, RNG);
-                C = ProectiveECPoint.GetAffineECPoint(ProectiveECPoint.MultiplyPoint(new ProectiveECPoint(P), k));
+                C = (EllipticCurvePoint)P.MultiplyPointByNumber(k);
                 r = C.x % q;
                 s = (r * d + k * e) % q;
             } while (r == 0 || s == 0);
@@ -233,14 +248,14 @@ namespace GOST_34._10_12
             if (e == 0)
                 e = 1;
 
-            var v = ProectiveECPoint.ExtendedEuclid(q, e);
+            var v = Operations.ExtendedEuclid(q, e);
             var z1 = s * v % q;
             var z2 = q + ((-(r * v)) % q);
 
-            var A = ProectiveECPoint.MultiplyPoint(new ProectiveECPoint(P), z1);
-            var B = ProectiveECPoint.MultiplyPoint(new ProectiveECPoint(Q), z2);
+            var A = (EllipticCurvePoint)P.MultiplyPointByNumber(z1);
+            var B = (EllipticCurvePoint)Q.MultiplyPointByNumber(z2);
 
-            var C= ProectiveECPoint.GetAffineECPoint(ProectiveECPoint.AdditionPoints(A,B));
+            var C= (EllipticCurvePoint)A.AddPoints(B);
             var R = C.x % q;
 
             if (R == r)
@@ -290,8 +305,8 @@ namespace GOST_34._10_12
 
             var A_edw = new EdwardsCurvePoint(A_weir);
             var B_edw = new EdwardsCurvePoint(B_weir);
-            var C_edw = EdwardsCurvePoint.SumEdwardsPoint(A_edw, B_edw);
-            var D_edw = EdwardsCurvePoint.MultipluEdwardsPoint(4582748486, A_edw);
+            var C_edw = (EdwardsCurvePoint)A_edw.AddPoints(B_edw);
+            var D_edw = (EdwardsCurvePoint)A_edw.MultiplyPointByNumber(4582748486);
             Console.WriteLine();
         }
     }
