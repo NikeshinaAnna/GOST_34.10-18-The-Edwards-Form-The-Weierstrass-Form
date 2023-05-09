@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-namespace GOST_34._10_12
+namespace GOST_34._10_18
 {
     public class Streebog
     {

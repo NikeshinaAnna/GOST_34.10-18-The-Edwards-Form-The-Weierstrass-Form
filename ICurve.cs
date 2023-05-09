@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GOST_34._10_12
+namespace GOST_34._10_18
 {
     public interface ICurve
     {
