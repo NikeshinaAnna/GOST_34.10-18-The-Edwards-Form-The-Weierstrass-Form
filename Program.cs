@@ -2,6 +2,7 @@
 using System.Configuration;
 using System.IO;
 using System.Diagnostics;
+using GOST_34._10_12;
 
 namespace GOST_34._10_18
 {
@@ -33,9 +34,13 @@ namespace GOST_34._10_18
             }
             var P_w = new EllipticCurvePoint(a, b, x, y, p);
             var Q_w = (EllipticCurvePoint)P_w.MultiplyPointByNumber(d);
+            var P = new WeierstrassCurveDecartPoint(P_w);
+            var Q = P.MultiplyPoint(P, d);
 
             var P_ed = new EdwardsCurvePoint(p, u, v);
             var Q_ed = (EdwardsCurvePoint)P_ed.MultiplyPointByNumber(d);
+            var P_e = new EdwardsCurveDecartPoint(P_ed);
+            var Q_e = P_e.MultiplyPoint(P_e, d);
 
             var configReader = new AppSettingsReader();
             string pathToFiles = configReader.GetValue("path", typeof(string)).ToString();

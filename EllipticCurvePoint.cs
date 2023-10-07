@@ -19,15 +19,15 @@
 
         public ICurve AddPoints(ICurve point2)
         {
-            var proectivePointA = new EllipticCurveProjectivePoint(this);
-            var proectivePointB = new EllipticCurveProjectivePoint(point2 as EllipticCurvePoint);
-            return EllipticCurveProjectivePoint.GetAffineECPoint(EllipticCurveProjectivePoint.AdditionPoints(proectivePointA, proectivePointB));
+            var proectivePointA = new WeierstrassCurveProjectivePoint(this);
+            var proectivePointB = new WeierstrassCurveProjectivePoint(point2 as EllipticCurvePoint);
+            return WeierstrassCurveProjectivePoint.GetAffineECPoint(WeierstrassCurveProjectivePoint.AdditionPoints(proectivePointA, proectivePointB));
         }
 
         public ICurve MultiplyPointByNumber(BigInteger number)
         {
-            var proectivePoint = new EllipticCurveProjectivePoint(this);
-            return EllipticCurveProjectivePoint.GetAffineECPoint(EllipticCurveProjectivePoint.MultiplyPoint(proectivePoint, number));
+            var proectivePoint = new WeierstrassCurveProjectivePoint(this);
+            return WeierstrassCurveProjectivePoint.GetAffineECPoint(WeierstrassCurveProjectivePoint.MultiplyPoint(proectivePoint, number));
         }
     }
 }

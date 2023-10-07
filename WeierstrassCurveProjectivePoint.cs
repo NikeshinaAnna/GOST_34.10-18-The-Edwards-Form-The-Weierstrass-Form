@@ -1,6 +1,6 @@
 ﻿namespace GOST_34._10_18
 {
-    class EllipticCurveProjectivePoint
+    class WeierstrassCurveProjectivePoint
     {
         public BigInteger x { get; set; }
         public BigInteger y { get; set; }
@@ -9,7 +9,7 @@
         public BigInteger a { get; set; }
         public BigInteger b { get; set; }
 
-        public EllipticCurveProjectivePoint(EllipticCurvePoint ellipticPoint)
+        public WeierstrassCurveProjectivePoint(EllipticCurvePoint ellipticPoint)
         {
             x = ellipticPoint.x;
             y = ellipticPoint.y;
@@ -18,7 +18,7 @@
             a = ellipticPoint.a;
             b = ellipticPoint.b;
         }
-        public EllipticCurveProjectivePoint(BigInteger p_x, BigInteger p_y, BigInteger p_z, BigInteger p_p, BigInteger p_a, BigInteger p_b)
+        public WeierstrassCurveProjectivePoint(BigInteger p_x, BigInteger p_y, BigInteger p_z, BigInteger p_p, BigInteger p_a, BigInteger p_b)
         {
             x = p_x;
             y = p_y;
@@ -28,7 +28,7 @@
             b = p_b;
         }
 
-        public static EllipticCurveProjectivePoint AdditionPoints(EllipticCurveProjectivePoint _point1, EllipticCurveProjectivePoint _point2)
+        public static WeierstrassCurveProjectivePoint AdditionPoints(WeierstrassCurveProjectivePoint _point1, WeierstrassCurveProjectivePoint _point2)
         {
             var fc = _point1.p;
             //var result = new ProectiveECPoint(0, 1, 0);//результат
@@ -61,10 +61,10 @@
             while (z_new < 0)
                 z_new += fc;
 
-            return new EllipticCurveProjectivePoint(x_new, y_new, z_new, fc, _point1.a, _point1.b);
+            return new WeierstrassCurveProjectivePoint(x_new, y_new, z_new, fc, _point1.a, _point1.b);
         }
 
-        private static EllipticCurveProjectivePoint DoublePoint(EllipticCurveProjectivePoint _point)
+        private static WeierstrassCurveProjectivePoint DoublePoint(WeierstrassCurveProjectivePoint _point)
         {
             var fc = _point.p;
             var U = 2 * _point.y * _point.z % fc;
@@ -86,12 +86,12 @@
             while (z_new < 0)
                 z_new += fc;
 
-            return new EllipticCurveProjectivePoint(x_new, y_new, z_new, fc, _point.a, _point.b);
+            return new WeierstrassCurveProjectivePoint(x_new, y_new, z_new, fc, _point.a, _point.b);
         }
 
-        public static EllipticCurveProjectivePoint MultiplyPoint(EllipticCurveProjectivePoint _point, BigInteger N)
+        public static WeierstrassCurveProjectivePoint MultiplyPoint(WeierstrassCurveProjectivePoint _point, BigInteger N)
         {
-            EllipticCurveProjectivePoint result = new EllipticCurveProjectivePoint(0, 1, 0, _point.p, _point.a, _point.b);
+            WeierstrassCurveProjectivePoint result = new WeierstrassCurveProjectivePoint(0, 1, 0, _point.p, _point.a, _point.b);
             var tmp = _point;
             while (N != 0)
             {
@@ -106,7 +106,7 @@
         }
 
 
-        public static EllipticCurvePoint GetAffineECPoint(EllipticCurveProjectivePoint _point)
+        public static EllipticCurvePoint GetAffineECPoint(WeierstrassCurveProjectivePoint _point)
         {
             var coef = Operations.ExtendedEuclid(_point.p, _point.z);
             BigInteger _x = _point.x * coef % _point.p;
